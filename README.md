@@ -1,10 +1,10 @@
-# AlphaProteo Bacterial Toxin Antidote Decision-Making Pipeline
+# AI Binder Analysis Pipeline
 
 ## The Problem
 
 Generative protein design tools like AlphaProteo can produce thousands of candidate binder designs in a single run. For each candidate, AlphaFold3 generates multiple folding scenarios (binder-target, binder alone, multimeric contexts), each with its own set of confidence metrics, structural coordinates, and interface predictions. The result is a combinatorial explosion of data: hundreds of designs, each with dozens of metrics, spread across tens of thousands of files.
 
-The core challenge is not generating candidates -- it is **deciding which ones to make**. With limited experimental bandwidth, every slot on the plate matters. This pipeline was built to turn raw structural predictions into a ranked, clustered, and visually interpretable decision framework for selecting AlphaProteo-designed protein binders against bacterial toxins.
+The core challenge is not generating candidates -- it is **deciding which ones to make**. With limited experimental bandwidth, every slot on the plate matters. This pipeline was built to turn raw structural predictions into a ranked, clustered, and visually interpretable decision framework for selecting which AI-designed protein binders to advance to experimental validation.
 
 ## Approach
 
