@@ -1,183 +1,145 @@
 # AlphaProteo Bacterial Toxin Antidote Decision-Making Pipeline
 
-A computational pipeline for evaluating AlphaProteo-designed protein binders against bacterial toxins. Starting from AlphaFold3 folding results, it consolidates structural confidence metrics, binding affinity predictions, contact residue analysis, and structural clustering into a single decision-making framework.
+## The Problem
 
----
+Generative protein design tools like AlphaProteo can produce thousands of candidate binder designs in a single run. For each candidate, AlphaFold3 generates multiple folding scenarios (binder-target, binder alone, multimeric contexts), each with its own set of confidence metrics, structural coordinates, and interface predictions. The result is a combinatorial explosion of data: hundreds of designs, each with dozens of metrics, spread across tens of thousands of files.
+
+The core challenge is not generating candidates -- it is **deciding which ones to make**. With limited experimental bandwidth, every slot on the plate matters. This pipeline was built to turn raw structural predictions into a ranked, clustered, and visually interpretable decision framework for selecting AlphaProteo-designed protein binders against bacterial toxins.
+
+## Approach
+
+The pipeline operates in two phases:
+
+**Phase 1 -- Metric Extraction and Consolidation.** Each design's AlphaFold3 outputs are parsed for structural confidence scores (iPTM, pTM, ranking confidence), interface contact residues, and structural alignment quality (RMSD). Three independent binding affinity predictors (PyRosetta, PPI-Graphormer, PRODIGY) are run on every structure. FoldSeek performs structural clustering to group designs by 3D similarity rather than sequence. All metrics are consolidated into a single table where each row is a design and each column is a measurable property.
+
+**Phase 2 -- Analysis and Visualization.** Dimensionality reduction (PCA, UMAP) reveals the structure of the design space. Correlation analysis identifies which metrics are redundant and which carry independent signal. FoldSeek clustering is tested across a range of sensitivity parameters to find clusters that are robust to algorithmic choices. Binding affinity predictions are cross-referenced against cluster membership and structural confidence to identify designs that score well across multiple independent measures.
+
+The key insight driving the analysis design: **no single metric is trustworthy on its own**. Predicted binding affinity can be noisy. Structural confidence can be high for designs that don't actually bind. Clustering can be sensitive to parameters. The pipeline's value is in integrating all of these signals and surfacing designs where multiple lines of evidence converge.
+
+```mermaid
+flowchart LR
+    subgraph raw ["Raw Predictions"]
+        AF3["AlphaFold3\nfolding outputs"]
+        AP["AlphaProteo\ndesign candidates"]
+    end
+
+    subgraph extract ["Metric Extraction"]
+        CONF["Confidence\nscores"]
+        CONTACT["Interface\ncontacts"]
+        AFFINITY["Binding affinity\n(3 predictors)"]
+        CLUSTER["Structural\nclustering"]
+    end
+
+    subgraph decide ["Decision Framework"]
+        CONSOL["Consolidated\nmetrics table"]
+        VIZ["Interactive\nvisualizations"]
+        RANK["Ranked\ncandidates"]
+    end
+
+    raw --> extract
+    extract --> decide
+```
 
 ## Interactive Outputs
 
-> **[View all interactive visualizations on GitHub Pages](https://jahoffman91.github.io/AI_binder_analysis_pipeline/)**
+The pipeline produces interactive visualizations designed to support multi-criteria decision-making. Each plot is a self-contained Plotly HTML file.
 
-| Visualization | Description |
+> **[Browse all visualizations](https://jahoffman91.github.io/AI_binder_analysis_pipeline/)**
+
+| Visualization | What it shows |
 |:---|:---|
-| [Cluster Affinity Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_affinity_network.html) | Design clusters connected by stable co-clustering pairs, colored by binding affinity rank and iPTM. |
-| [Cluster Affinity Scatter](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_scatter_chart.html) | Per-design affinity predictions across ultra-stable FoldSeek clusters with iPTM overlay. |
-| [Cluster Affinity Bar Chart](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_bar_chart.html) | Per-cluster breakdown of PRODIGY, PyRosetta, and PPI-Graphormer predictions alongside iPTM. |
-| [Robustness Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_network_graph.html) | Interactive network with adjustable co-clustering threshold, layout options, and pass/fail coloring. |
+| [Cluster Affinity Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_affinity_network.html) | Designs as nodes, edges where pairs consistently co-cluster across FoldSeek parameter sweeps. Node color toggles between affinity rank, experimental pass/fail, and iPTM. Reveals which structural clusters contain the most promising candidates. |
+| [Cluster Affinity Scatter](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_scatter_chart.html) | Every design plotted by its ultra-stable cluster, with combined affinity rank and iPTM on toggle. Quickly identifies clusters where most members score well vs. clusters with high variance. |
+| [Cluster Affinity Breakdown](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_bar_chart.html) | Per-cluster view of all three binding affinity predictors (PRODIGY, PyRosetta, PPI-Graphormer) alongside structural confidence. Shows where predictors agree and where they diverge. |
+| [Robustness Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_network_graph.html) | Tests whether cluster assignments are stable across FoldSeek sensitivity/coverage parameters. Adjustable threshold slider shows which design pairs always cluster together vs. which are borderline. |
 
-### Target Contact Heatmap Animation
+### Target Contact Heatmap
 
-Per-residue contact frequency across the target protein, animated by ultra-stable cluster:
+Per-residue contact frequency across the target protein surface, animated by ultra-stable cluster. Highlights which target hotspots are preferentially contacted by top-performing designs:
 
 https://github.com/jahoffman91/AI_binder_analysis_pipeline/raw/main/docs/assets/Heatmap_animation.mp4
 
 ---
 
-## Pipeline Architecture
+## Technical Details
 
-```mermaid
-flowchart TD
-    subgraph inputs ["Inputs (user-provided)"]
-        AF3["All_fold_results/\n(CIF + JSON from AF3)"]
-        PDB["All_pdb_results/\n(PDB structures)"]
-        KEY["AP_submissions_key.csv"]
-    end
+<details>
+<summary>Pipeline steps and configuration</summary>
 
-    subgraph processing ["Processing Pipeline (13 steps)"]
-        P1["1. Extract AF3 confidence metrics"]
-        P2["2. Sequence length analysis"]
-        P3["3. Contact residue analysis"]
-        P4["4-6. PyMOL structural alignments + RMSD"]
-        P5["7-10. Binding affinity predictions\n(PyRosetta / PPI-Graphormer / PRODIGY)"]
-        P6["11. Consolidate all metrics"]
-        P7["13. FoldSeek structural clustering"]
-    end
+### Processing Pipeline (13 steps)
 
-    subgraph hub ["Consolidated Hub"]
-        CSV["all_metrics_consolidated.csv"]
-    end
+| Step | Description | External tool |
+|------|-------------|---------------|
+| 1 | Extract AF3 confidence metrics (iPTM, pTM, ranking) | -- |
+| 2 | Sequence length analysis | -- |
+| 3 | Contact residue analysis (interface contacts, amino acid frequencies) | BioPython |
+| 4-6 | Structural alignment via PyMOL + RMSD parsing | PyMOL |
+| 7 | RMSD consolidation | -- |
+| 8 | Interface energy / Kd estimation | PyRosetta |
+| 9 | ML-based binding affinity | PPI-Graphormer |
+| 10 | Physics-based binding affinity | PRODIGY |
+| 11 | Consolidate all metrics into single table | -- |
+| 12 | Generate HTML report | -- |
+| 13 | FoldSeek structural clustering | FoldSeek |
 
-    subgraph analysis ["Analysis Pipeline (12 steps)"]
-        A1["1-3. PCA + UMAP dimensionality reduction"]
-        A2["4-5. Correlation analysis"]
-        A3["6-7. FoldSeek sensitivity + cluster pass rates"]
-        A4["8-9. Contact heatmaps + cluster PDBs"]
-        A5["10-12. Affinity analysis + interactive plots"]
-    end
+### Analysis Pipeline (12 steps)
 
-    inputs --> processing
-    processing --> hub
-    hub --> analysis
-```
+| Step | Description |
+|------|-------------|
+| 1-3 | PCA and UMAP dimensionality reduction |
+| 4-5 | Pearson/Spearman correlation analysis + interactive heatmaps |
+| 6-7 | FoldSeek sensitivity curves + cluster pass-rate analysis |
+| 8-9 | Contact residue heatmaps + multi-model cluster PDBs |
+| 10-12 | Affinity prediction analysis + interactive network/scatter plots |
 
-## Quick Start
-
-### 1. Install Python dependencies
+### Running the pipeline
 
 ```bash
 pip install -r requirements.txt
-# or with conda:
-conda env create -f environment.yml
-conda activate alphaproteo-pipeline
+# Edit config.yaml to set your input paths and tool locations
+python -m pipeline list-steps          # Show steps and completion status
+python -m pipeline run --phase all     # Run everything
+python -m pipeline run --phase analysis --steps 1,2,3  # Run specific steps
+python -m pipeline run --phase all --dry-run            # Preview without executing
 ```
 
-### 2. Install external tools
+### Configuration
 
-The pipeline uses several structural biology tools. See [docs/installation.md](docs/installation.md) for detailed instructions. Steps that require unavailable tools can be disabled in `config.yaml`.
+All paths, tool locations, and parameters are in `config.yaml`. Steps requiring external tools (PyMOL, PyRosetta, PPI-Graphormer, PRODIGY, FoldSeek) can be individually disabled. See [docs/installation.md](docs/installation.md) for tool installation instructions.
 
-| Tool | Steps | Required? |
-|------|-------|-----------|
-| FoldSeek | Processing 13, Analysis 6-7 | Recommended |
-| PyMOL | Processing 4-7 | Optional |
-| PyRosetta | Processing 8 | Optional |
-| PPI-Graphormer | Processing 9 | Optional |
-| PRODIGY | Processing 10 | Optional |
+</details>
 
-### 3. Configure paths
+<details>
+<summary>Expected input/output structure</summary>
 
-Edit `config.yaml` to point to your data:
-
-```yaml
-paths:
-  working_dir: "."
-  inputs_dir: "Inputs"
-  all_fold_results: "Inputs/All_fold_results"
-  all_pdb_results: "Inputs/All_pdb_results"
-  ap_submissions_key: "Inputs/AP_submissions_key.csv"
-
-tools:
-  pymol_path: "pymol"
-  foldseek_path: "foldseek"
-```
-
-### 4. Run the pipeline
-
-```bash
-# See available steps and their completion status
-python -m pipeline list-steps
-
-# Run everything
-python -m pipeline run --phase all
-
-# Run only the processing pipeline
-python -m pipeline run --phase processing
-
-# Run specific analysis steps
-python -m pipeline run --phase analysis --steps 1,2,3
-
-# Dry run (show commands without executing)
-python -m pipeline run --phase all --dry-run
-
-# Force re-run of completed steps
-python -m pipeline run --phase analysis --steps 8 --force
-```
-
-## Expected Input Structure
+### Inputs
 
 ```
 Inputs/
   AP_submissions_key.csv          # Design metadata with Sequence column
-  All_fold_results/               # AlphaFold3 folding outputs
-    ap_s1_1_b1t1/                 # One folder per design x binding scenario
-      ap_s1_1_b1t1/
-        ap_s1_1_b1t1_summary_confidences.json
-        ap_s1_1_b1t1_model.cif
-    ap_s1_1_b1t2/
-      ...
+  All_fold_results/               # AlphaFold3 folding outputs (CIF + JSON per design)
   All_pdb_results/                # PDB-format structure files
-    ap_s1_1_b1t1_model.pdb
-    ...
   AP_results/                     # AlphaProteo original predictions (mmCIF)
 ```
 
-## Output Structure
+### Outputs
 
 ```
 Outputs/
-  performance_metrics/            # iPTM, pTM, ranking scores per design
+  consolidated_data/
+    all_metrics_consolidated.csv  # Central table: one row per design, all metrics as columns
+  performance_metrics/            # iPTM, pTM, ranking scores
   contact_analysis/               # Interface contact features
-  alignments/                     # PyMOL scripts and RMSD logs
-  rmsd_results/                   # Consolidated RMSD values
   binding_strength_prediction/    # PyRosetta, PPI-Graphormer, PRODIGY results
   foldseek_clustering/            # Structural cluster assignments
-  consolidated_data/
-    all_metrics_consolidated.csv  # Central table joining all metrics
-  reports/                        # HTML report + executive summary
 
 Analysis_Outputs/
-  PCA_Analysis/                   # Principal component analysis
-  UMAP_Analysis/                  # UMAP embeddings and plots
-  Correlation_Analysis/           # Pearson/Spearman correlation matrices
-  Affinity_Analysis/              # Affinity vs. pass-rate rankings
+  PCA_Analysis/                   # Dimensionality reduction
+  UMAP_Analysis/                  # UMAP embeddings
+  Correlation_Analysis/           # Correlation matrices
+  Affinity_Analysis/              # Cross-method affinity rankings
   Contact_Analysis/               # Per-target contact heatmaps
-  Cluster_PDBs/                   # Multi-model PDB files per cluster
   Robustness_Analysis_.../        # Cross-parameter cluster stability
 ```
 
-## Configuration Reference
-
-All configurable parameters live in `config.yaml`:
-
-| Section | Key | Default | Description |
-|---------|-----|---------|-------------|
-| `paths` | `working_dir` | `.` | Project root directory |
-| `tools` | `pymol_path` | `pymol` | Path to PyMOL executable |
-| `tools` | `foldseek_path` | `foldseek` | Path to FoldSeek binary |
-| `params` | `contact_distance` | `5.0` | Contact distance threshold (angstroms) |
-| `params` | `design_pattern` | `*b1t1_model.pdb` | Glob pattern for design PDB files |
-| `params` | `ppi_graphormer_device` | `mps` | Compute device (`mps`, `cuda`, `cpu`) |
-| `pipeline` | `processing_steps.N.enabled` | `true` | Enable/disable individual steps |
-
-## License
-
-[Add license information here]
+</details>
