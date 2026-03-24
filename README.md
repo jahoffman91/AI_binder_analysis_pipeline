@@ -2,32 +2,24 @@
 
 A computational pipeline for evaluating AlphaProteo-designed protein binders against bacterial toxins. Starting from AlphaFold3 folding results, it consolidates structural confidence metrics, binding affinity predictions, contact residue analysis, and structural clustering into a single decision-making framework.
 
+---
+
 ## Interactive Outputs
 
-> **[View all interactive visualizations on GitHub Pages](https://github.com/)**
+> **[View all interactive visualizations on GitHub Pages](https://jahoffman91.github.io/AI_binder_analysis_pipeline/)**
 
-<table>
-<tr>
-<td width="50%">
-
-**Cluster Affinity Network**
-Design clusters connected by stable co-clustering pairs, colored by binding affinity rank and iPTM.
-
-</td>
-<td width="50%">
-
-**Cluster Affinity Scatter**
-Per-design affinity predictions across ultra-stable FoldSeek clusters with iPTM overlay.
-
-</td>
-</tr>
-</table>
+| Visualization | Description |
+|:---|:---|
+| [Cluster Affinity Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_affinity_network.html) | Design clusters connected by stable co-clustering pairs, colored by binding affinity rank and iPTM. |
+| [Cluster Affinity Scatter](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_scatter_chart.html) | Per-design affinity predictions across ultra-stable FoldSeek clusters with iPTM overlay. |
+| [Cluster Affinity Bar Chart](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_bar_chart.html) | Per-cluster breakdown of PRODIGY, PyRosetta, and PPI-Graphormer predictions alongside iPTM. |
+| [Robustness Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_network_graph.html) | Interactive network with adjustable co-clustering threshold, layout options, and pass/fail coloring. |
 
 ### Target Contact Heatmap Animation
 
 Per-residue contact frequency across the target protein, animated by ultra-stable cluster:
 
-<video src="docs/assets/Heatmap_animation.mpg" controls autoplay loop muted width="720"></video>
+https://github.com/jahoffman91/AI_binder_analysis_pipeline/raw/main/docs/assets/Heatmap_animation.mp4
 
 ---
 
