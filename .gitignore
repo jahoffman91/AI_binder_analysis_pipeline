@@ -1,0 +1,43 @@
+# Large data directories
+Inputs/
+Outputs/
+Analysis_Outputs/
+
+# Legacy/exploratory folders (not part of clean pipeline)
+Scripts_to_call/
+Scripts_to_aggregate/
+PCA_Analysis/
+Correlation_Matrix/
+Cluster_Analysis/
+foldseek_parameter_testing/
+
+# Original master scripts (superseded by pipeline/ package)
+master_processing_pipeline.py
+master_analysis_pipeline.py
+optimize_kmeans_clusters.py
+
+# Legacy docs (content moved into README / docs/)
+CLUSTER_CONTACT_ANIMATION_SUMMARY.md
+FoldSeek_Hierarchical_Clustering_Algorithm_README.md
+
+# Python
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Cursor
+.cursor/
