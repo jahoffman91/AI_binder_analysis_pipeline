@@ -50,8 +50,6 @@ The pipeline produces interactive visualizations designed to support multi-crite
 |:---|:---|
 | [Cluster Affinity Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_affinity_network.html) | Designs as nodes, edges where pairs consistently co-cluster across FoldSeek parameter sweeps. Node color toggles between affinity rank, experimental pass/fail, and iPTM. Reveals which structural clusters contain the most promising candidates. |
 | [Cluster Affinity Scatter](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_scatter_chart.html) | Every design plotted by its ultra-stable cluster, with combined affinity rank and iPTM on toggle. Quickly identifies clusters where most members score well vs. clusters with high variance. |
-| [Cluster Affinity Breakdown](https://jahoffman91.github.io/AI_binder_analysis_pipeline/cluster_affinity_bar_chart.html) | Per-cluster view of all three binding affinity predictors (PRODIGY, PyRosetta, PPI-Graphormer) alongside structural confidence. Shows where predictors agree and where they diverge. |
-| [Robustness Network](https://jahoffman91.github.io/AI_binder_analysis_pipeline/interactive_network_graph.html) | Tests whether cluster assignments are stable across FoldSeek sensitivity/coverage parameters. Adjustable threshold slider shows which design pairs always cluster together vs. which are borderline. |
 
 ### Target Contact Heatmap
 
