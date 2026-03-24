@@ -55,9 +55,15 @@ The pipeline produces interactive visualizations designed to support multi-crite
 
 ### Target Contact Heatmap
 
-Per-residue contact frequency across the target protein surface, animated by ultra-stable cluster. Highlights which target hotspots are preferentially contacted by top-performing designs:
+Per-residue contact frequency mapped onto the target protein surface. Red indicates residues frequently contacted by designed binders across ultra-stable clusters; blue indicates rarely contacted regions. This reveals the preferred binding hotspots that top-performing designs converge on.
 
-https://github.com/jahoffman91/AI_binder_analysis_pipeline/raw/main/docs/assets/Heatmap_animation.mp4
+<p align="center">
+  <img src="docs/assets/target_contact_heatmap.png" alt="Target contact heatmap showing per-residue binding frequency" width="500">
+</p>
+
+<p align="center">
+  <a href="https://github.com/jahoffman91/AI_binder_analysis_pipeline/raw/main/docs/assets/Heatmap_animation.mp4">Watch the animated version</a> — cycles through each ultra-stable cluster to show how contact patterns shift.
+</p>
 
 ---
 
